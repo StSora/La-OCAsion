@@ -66,14 +66,14 @@
 ### FASE 3 — Componentes del juego (estimado: 4-6h)
 - [x] `Board` — Grid 10×7 con lógica de espiral
 - [x] `Square` — Casilla individual (especiales, oca, meta)
-- [ ] `DiceRoller` — Dado animado con Reanimated
+- [x] `DiceRoller` — Dado animado con Reanimated
 - [ ] `CardModal` — BottomSheet con el reto/efecto de la casilla
 - [x] `PlayerToken` — Fichas de jugadores sobre el tablero
 
 ### FASE 4 — Diseño y animaciones (estimado: 2-3h)
 - [x] Sistema de colores/tokens en `src/theme.ts`
 - [x] Tipografías con `expo-font` (Inter)
-- [ ] Animación de dado (rotación)
+- [x] Animación de dado (rotación)
 - [ ] Animación de ficha al moverse
 - [ ] Confeti en pantalla ganador
 
