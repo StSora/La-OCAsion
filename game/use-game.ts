@@ -44,6 +44,9 @@ function bounce(target: number) {
   return target > 63 ? 63 - (target - 63) : target;
 }
 
+/** Pausa entre ver el número del dado y que aparezca la tarjeta del reto. */
+const CARD_DELAY = 550;
+
 export function useGame() {
   const [players, setPlayers] = useState<Player[]>([]);
   const [started, setStarted] = useState(false);
@@ -150,15 +153,17 @@ export function useGame() {
         message += ` · ${square.name}: ${reto}`;
       }
 
-      setCard({
-        square: landedFrom,
-        name: square.name,
-        icon: square.icon,
-        text: reto,
-        playerName: current.name,
-        color: current.color,
-        effect,
-      });
+      setTimeout(() => {
+        setCard({
+          square: landedFrom,
+          name: square.name,
+          icon: square.icon,
+          text: reto,
+          playerName: current.name,
+          color: current.color,
+          effect,
+        });
+      }, CARD_DELAY);
 
       setPlayers((prev) => {
         const next = prev.map((p) => {

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -12,10 +12,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Board } from '@/components/board';
+import { Dice } from '@/components/dice';
 import { useGameContext } from '@/game/game-context';
+import type { Player } from '@/game/use-game';
 
 export default function GameScreen() {
   const game = useGameContext();
+  // Solo se sincroniza con game.currentPlayer al cerrar la tarjeta del reto,
+  // para que la cajita de turno no cambie de jugador/color mientras aún se
+  // está leyendo el reto del jugador que acaba de tirar.
+  const [displayedPlayer, setDisplayedPlayer] = useState<Player | undefined>(game.currentPlayer);
 
   useEffect(() => {
     if (!game.started) router.replace('/');
@@ -25,7 +31,18 @@ export default function GameScreen() {
     if (game.winner) router.push('/winner');
   }, [game.winner]);
 
+  useEffect(() => {
+    if (!displayedPlayer && game.currentPlayer) setDisplayedPlayer(game.currentPlayer);
+  }, [displayedPlayer, game.currentPlayer]);
+
+  const handleCloseCard = () => {
+    game.closeCard();
+    setDisplayedPlayer(game.currentPlayer);
+  };
+
   if (!game.started || !game.currentPlayer) return null;
+
+  const shownPlayer = displayedPlayer ?? game.currentPlayer;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -40,24 +57,17 @@ export default function GameScreen() {
         <Board players={game.players} />
       </ScrollView>
 
-      <View style={styles.bottomBar}>
+      <View style={[styles.bottomBar, { backgroundColor: shownPlayer.color }]}>
         <View style={styles.turnRow}>
-          <View style={[styles.colorDot, { backgroundColor: game.currentPlayer.color }]} />
-          <Text style={styles.turnText}>Turno de {game.currentPlayer.name}</Text>
+          <Text style={styles.turnText}>Turno de {shownPlayer.name}</Text>
         </View>
 
         <View style={styles.diceRow}>
-          <Text style={styles.diceValue}>{game.dice ?? '🎲'}</Text>
-          <Pressable
-            style={[styles.rollButton, (game.rolling || !!game.winner) && styles.rollButtonDisabled]}
-            onPress={game.roll}
-            disabled={game.rolling || !!game.winner}>
-            <Text style={styles.rollButtonText}>{game.rolling ? 'Tirando…' : 'Tirar dado'}</Text>
-          </Pressable>
+          <Dice value={game.dice} rolling={game.rolling} disabled={!!game.winner} onPress={game.roll} />
         </View>
       </View>
 
-      <Modal visible={!!game.card} transparent animationType="fade" onRequestClose={game.closeCard}>
+      <Modal visible={!!game.card} transparent animationType="fade" onRequestClose={handleCloseCard}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             {game.card && (
@@ -68,7 +78,7 @@ export default function GameScreen() {
                 <Text style={[styles.modalPlayer, { color: game.card.color }]}>@{game.card.playerName}</Text>
                 {!!game.card.text && <Text style={styles.modalText}>{game.card.text}</Text>}
                 {!!game.card.effect && <Text style={styles.modalEffect}>{game.card.effect}</Text>}
-                <Pressable style={styles.modalButton} onPress={game.closeCard}>
+                <Pressable style={styles.modalButton} onPress={handleCloseCard}>
                   <Text style={styles.modalButtonText}>¡Hecho!</Text>
                 </Pressable>
               </>
@@ -112,10 +122,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   bottomBar: {
-    padding: 16,
-    gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ffffff1a',
+    margin: 16,
+    marginTop: 0,
+    padding: 18,
+    gap: 14,
+    borderRadius: 24,
   },
   turnRow: {
     flexDirection: 'row',
@@ -123,43 +134,19 @@ const styles = StyleSheet.create({
     gap: 8,
     justifyContent: 'center',
   },
-  colorDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
   turnText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
+    textShadowColor: '#00000055',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   diceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-  },
-  diceValue: {
-    fontSize: 36,
-    color: '#fff',
-    minWidth: 48,
-    textAlign: 'center',
-  },
-  rollButton: {
-    flex: 1,
-    maxWidth: 220,
-    backgroundColor: '#E8730C',
-    borderRadius: 16,
-    paddingVertical: 16,
-    alignItems: 'center',
-  },
-  rollButtonDisabled: {
-    opacity: 0.5,
-  },
-  rollButtonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
