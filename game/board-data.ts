@@ -80,7 +80,7 @@ const SPECIALS: Record<number, Omit<BoardSquare, 'id'>> = {
   29: { name: 'Más de 1,65', icon: '⬆️', type: 'normal', description: 'Beben los que midan más de 1,65' },
   30: { name: 'Orgullo', icon: '🏳️‍🌈', type: 'normal', description: 'Beben los que pertenezcan al colectivo LGTBQ+' },
   31: { name: 'El más joven', icon: '🍼', type: 'normal', description: 'Bebe el más joven del grupo' },
-  32: { name: 'Postura favorita', icon: '🛏️', type: 'normal', description: 'Representa tu postura favorita con @random' },
+  32: { name: 'Postura favorita', icon: '🛏️', type: 'normal', description: 'Representa tu postura sexual favorita con @random' },
   33: { name: 'Cambio de sitio', icon: '🪑', type: 'normal', description: '@jugador cambia el sitio con quien quieras' },
   34: { name: 'Castaños', icon: '👩', type: 'normal', description: 'Beben los de pelo castaño' },
   35: { name: 'Dados', icon: '🎲', type: 'dados', description: '@jugador bebe tantos shots como el número que saque en el dado' },
