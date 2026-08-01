@@ -15,7 +15,7 @@ export default function RootLayout() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <GameProvider>
           <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="index" options={{ headerShown: false, title: 'Inicio' }} />
             <Stack.Screen name="setup" options={{ title: 'Jugadores' }} />
             <Stack.Screen name="game" options={{ headerShown: false, gestureEnabled: false }} />
             <Stack.Screen name="winner" options={{ headerShown: false, gestureEnabled: false }} />

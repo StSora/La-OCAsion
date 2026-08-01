@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
+import { useHeaderHeight } from '@react-navigation/elements';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -19,26 +22,30 @@ const MAX_PLAYERS = 8;
 
 export default function SetupScreen() {
   const game = useGameContext();
+  const headerHeight = useHeaderHeight();
   const [drafts, setDrafts] = useState<PlayerDraft[]>(() => createDrafts(MIN_PLAYERS));
-
-  const setCount = (count: number) => {
-    if (count < MIN_PLAYERS || count > MAX_PLAYERS) return;
-    setDrafts((prev) => {
-      if (count < prev.length) return prev.slice(0, count);
-      const used = new Set(prev.map((p) => p.colorId));
-      const extra = createDrafts(count)
-        .slice(prev.length)
-        .map((d, i) => ({
-          ...d,
-          colorId: PLAYER_COLORS.find((c) => !used.has(c.id))?.id ?? d.colorId,
-          name: `Jugador ${prev.length + i + 1}`,
-        }));
-      return [...prev, ...extra];
-    });
-  };
+  const [openPicker, setOpenPicker] = useState<number | null>(null);
 
   const update = (index: number, patch: Partial<PlayerDraft>) =>
     setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, ...patch } : d)));
+
+  const addPlayer = () => {
+    if (drafts.length >= MAX_PLAYERS) return;
+    const used = new Set(drafts.map((d) => d.colorId));
+    const colorId = PLAYER_COLORS.find((c) => !used.has(c.id))?.id ?? PLAYER_COLORS[0].id;
+    setDrafts((prev) => [...prev, { name: `Jugador ${prev.length + 1}`, colorId }]);
+  };
+
+  const removePlayer = (index: number) => {
+    if (drafts.length <= MIN_PLAYERS) return;
+    setDrafts((prev) => prev.filter((_, i) => i !== index));
+    setOpenPicker(null);
+  };
+
+  const selectColor = (index: number, colorId: string) => {
+    update(index, { colorId });
+    setOpenPicker(null);
+  };
 
   const onStart = () => {
     game.start(drafts);
@@ -47,68 +54,78 @@ export default function SetupScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? headerHeight : 0}>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>La OCAsión</Text>
         <Text style={styles.subtitle}>De 3 a 8 jugadores, todos en el mismo móvil.</Text>
 
-        <View style={styles.counterRow}>
-          <Text style={styles.label}>Número de jugadores</Text>
-          <View style={styles.counterControls}>
-            <Pressable
-              style={styles.counterButton}
-              onPress={() => setCount(drafts.length - 1)}
-              disabled={drafts.length <= MIN_PLAYERS}>
-              <Text style={styles.counterButtonText}>−</Text>
-            </Pressable>
-            <Text style={styles.counterValue}>{drafts.length}</Text>
-            <Pressable
-              style={styles.counterButton}
-              onPress={() => setCount(drafts.length + 1)}
-              disabled={drafts.length >= MAX_PLAYERS}>
-              <Text style={styles.counterButtonText}>+</Text>
-            </Pressable>
-          </View>
-        </View>
-
-        {drafts.map((draft, index) => (
-          <View key={index} style={styles.playerCard}>
-            <View style={styles.playerRow}>
-              <View style={[styles.colorDot, { backgroundColor: PLAYER_COLORS.find((c) => c.id === draft.colorId)?.value }]} />
-              <TextInput
-                value={draft.name}
-                maxLength={16}
-                onChangeText={(text) => update(index, { name: text })}
-                placeholder={`Jugador ${index + 1}`}
-                placeholderTextColor="#ffffff66"
-                style={styles.input}
-              />
-            </View>
-            <View style={styles.colorRow}>
-              {PLAYER_COLORS.map((color) => {
-                const taken = drafts.some((d, i) => i !== index && d.colorId === color.id);
-                const selected = draft.colorId === color.id;
-                return (
+        {drafts.map((draft, index) => {
+          const color = PLAYER_COLORS.find((c) => c.id === draft.colorId)?.value;
+          const pickerOpen = openPicker === index;
+          return (
+            <View key={index} style={styles.playerCard}>
+              <View style={styles.playerRow}>
+                <Pressable
+                  style={[styles.avatar, { backgroundColor: color }]}
+                  onPress={() => setOpenPicker(pickerOpen ? null : index)}
+                />
+                <TextInput
+                  value={draft.name}
+                  maxLength={16}
+                  onChangeText={(text) => update(index, { name: text })}
+                  placeholder={`Jugador ${index + 1}`}
+                  placeholderTextColor="#ffffff55"
+                  style={styles.input}
+                />
+                {drafts.length > MIN_PLAYERS && (
                   <Pressable
-                    key={color.id}
-                    disabled={taken}
-                    onPress={() => update(index, { colorId: color.id })}
-                    style={[
-                      styles.colorSwatch,
-                      { backgroundColor: color.value },
-                      selected && styles.colorSwatchSelected,
-                      taken && styles.colorSwatchTaken,
-                    ]}
-                  />
-                );
-              })}
+                    style={styles.removeButton}
+                    hitSlop={10}
+                    onPress={() => removePlayer(index)}>
+                    <Text style={styles.removeButtonText}>×</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              {pickerOpen && (
+                <View style={styles.colorPicker}>
+                  {PLAYER_COLORS.map((c) => {
+                    const taken = drafts.some((d, i) => i !== index && d.colorId === c.id);
+                    const selected = draft.colorId === c.id;
+                    return (
+                      <Pressable
+                        key={c.id}
+                        disabled={taken}
+                        onPress={() => selectColor(index, c.id)}
+                        style={[
+                          styles.colorSwatch,
+                          { backgroundColor: c.value },
+                          selected && styles.colorSwatchSelected,
+                          taken && styles.colorSwatchTaken,
+                        ]}
+                      />
+                    );
+                  })}
+                </View>
+              )}
             </View>
-          </View>
-        ))}
+          );
+        })}
+
+        {drafts.length < MAX_PLAYERS && (
+          <Pressable style={styles.addButton} onPress={addPlayer}>
+            <Text style={styles.addButtonText}>+</Text>
+          </Pressable>
+        )}
 
         <Pressable style={styles.startButton} onPress={onStart}>
           <Text style={styles.startButtonText}>Empezar partida</Text>
         </Pressable>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -118,9 +135,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#14171c',
   },
+  flex: {
+    flex: 1,
+  },
   scroll: {
     padding: 20,
-    gap: 16,
+    gap: 12,
   },
   title: {
     color: '#fff',
@@ -133,80 +153,55 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 8,
   },
-  label: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  counterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ffffff22',
-  },
-  counterControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  counterButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#ffffff33',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  counterButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  counterValue: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-    minWidth: 28,
-    textAlign: 'center',
-  },
   playerCard: {
-    padding: 12,
-    borderRadius: 16,
+    padding: 10,
+    borderRadius: 18,
+    backgroundColor: '#ffffff0d',
     borderWidth: 1,
-    borderColor: '#ffffff22',
+    borderColor: '#ffffff1a',
     gap: 10,
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
   },
-  colorDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ffffff33',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    paddingVertical: 6,
   },
-  colorRow: {
+  removeButton: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeButtonText: {
+    color: '#ffffff77',
+    fontSize: 20,
+    lineHeight: 20,
+  },
+  colorPicker: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: '#ffffff14',
   },
   colorSwatch: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
   },
   colorSwatchSelected: {
     borderWidth: 3,
@@ -214,6 +209,21 @@ const styles = StyleSheet.create({
   },
   colorSwatchTaken: {
     opacity: 0.25,
+  },
+  addButton: {
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: '#E8730C26',
+    borderWidth: 1,
+    borderColor: '#E8730C66',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: '#F5A25C',
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 26,
   },
   startButton: {
     marginTop: 8,
