@@ -1,6 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
 import { GameProvider } from '@/game/game-context';
@@ -10,17 +11,19 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <GameProvider>
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="setup" options={{ title: 'Jugadores' }} />
-          <Stack.Screen name="game" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="winner" options={{ headerShown: false, gestureEnabled: false }} />
-          <Stack.Screen name="log" options={{ title: 'Registro' }} />
-        </Stack>
-      </GameProvider>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <GameProvider>
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="setup" options={{ title: 'Jugadores' }} />
+            <Stack.Screen name="game" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="winner" options={{ headerShown: false, gestureEnabled: false }} />
+            <Stack.Screen name="log" options={{ title: 'Registro' }} />
+          </Stack>
+        </GameProvider>
+        <StatusBar style="auto" />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

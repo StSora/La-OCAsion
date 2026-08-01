@@ -43,6 +43,8 @@
 - Pantalla: Inicio/Splash
 - Pantalla: Configurar jugadores
 - Pantalla: Tablero
+
+### VER MÁS EN EL NOTION EN TAREAS
 ---
 
 ## ⬜ Pendiente

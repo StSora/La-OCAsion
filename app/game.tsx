@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import {
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Board } from '@/components/board';
 import { Dice } from '@/components/dice';
+import { PinchZoomView } from '@/components/pinch-zoom-view';
 import { useGameContext } from '@/game/game-context';
 import type { Player } from '@/game/use-game';
 
@@ -53,9 +53,11 @@ export default function GameScreen() {
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={styles.boardWrap}>
-        <Board players={game.players} />
-      </ScrollView>
+      <View style={styles.boardWrap}>
+        <PinchZoomView>
+          <Board players={game.players} />
+        </PinchZoomView>
+      </View>
 
       <View style={[styles.bottomBar, { backgroundColor: shownPlayer.color }]}>
         <View style={styles.turnRow}>
@@ -118,8 +120,9 @@ const styles = StyleSheet.create({
   },
   boardWrap: {
     padding: 16,
-    flexGrow: 1,
+    flex: 1,
     justifyContent: 'center',
+    overflow: 'hidden',
   },
   bottomBar: {
     margin: 16,
